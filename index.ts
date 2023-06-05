@@ -21,9 +21,6 @@ io.on("connection", (socket: Socket) => {
       name: data.name,
       socket,
     };
-
-    console.log({ client });
-
     clients.push(client);
 
     if (process.env.NODE_ENV === "development") {
@@ -31,31 +28,33 @@ io.on("connection", (socket: Socket) => {
     }
   });
 
-  // Handle chat messages
-  socket.on(
-    "chatMessage",
-    ({ target, message }: { message: string; target: string }) => {
-      const sender =
-        clients.find((client) => client.id === socket.id)?.name || "Unknown";
-      const from = clients.find((client) => client.name === target);
+  socket.on("chatMessage", ({ target, content }: ChatMessage) => {
+    const sender =
+      clients.find((client) => client.id === socket.id)?.name || "Unknown";
+    const from = clients.find((client) => client.name === target);
 
-      console.log(clients.find((client) => client.name === target));
-
+    if (from) {
       const chatMessage: ChatMessage = {
         id: socket.id,
-        sender, // @ts-ignore
+        sender,
         target: from.name,
-        content: message,
+        content,
         timestamp: Date.now(),
       };
-
       chatMessages.push(chatMessage);
-
-      console.log({ chatMessage });
-      /////////
       io.to(from!.socket.id).emit("chatMessage", chatMessage);
+
+      if (process.env.NODE_ENV === "development") {
+        io.send(`sent chatMessage`, chatMessage);
+      }
+    } else {
+      if (process.env.NODE_ENV === "development") {
+        io.send(`target not found: ${target}`);
+      }
     }
-  );
+
+    /////////
+  });
 
   // Handle disconnect event
   socket.on("disconnect", () => {
