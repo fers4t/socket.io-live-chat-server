@@ -1,4 +1,4 @@
-import { Signale, SignaleOptions } from "signale";
+import { Signale } from "signale";
 
 const options = {
   disabled: false,

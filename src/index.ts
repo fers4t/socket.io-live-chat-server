@@ -1,8 +1,8 @@
 import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
-import { ChatMessage, Client } from "../types/types";
-import signale from "../lib/signale";
+import { ChatMessage, Client } from "@/types/types";
+import signale from "@/lib/signale";
 // TODO: #1 add MongoDB authentication
 
 const app = express();

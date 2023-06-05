@@ -14,5 +14,3 @@ interface Client {
 }
 
 export { ChatMessage, Client };
-
-// modify Signale interface
