@@ -52,7 +52,7 @@ io.on("connection", (socket: Socket) => {
       chatMessages.push(chatMessage);
 
       console.log({ chatMessage });
-
+      /////////
       io.to(from!.socket.id).emit("chatMessage", chatMessage);
     }
   );
