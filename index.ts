@@ -14,8 +14,11 @@ io.on("connection", (socket: Socket) => {
   console.log("A user connected.");
 
   // Register the client and store its information
-  socket.on("register", (data: { name: string }) => {
-    console.log(data);
+  socket.on("register", (data: Client) => {
+    if (!data.name) {
+      socket.disconnect();
+      return;
+    }
     const client: Client = {
       id: socket.id,
       name: data.name,
