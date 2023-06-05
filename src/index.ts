@@ -1,8 +1,8 @@
 import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
-import { ChatMessage, Client } from "./types";
-import signale from "signale";
+import { ChatMessage, Client } from "../types/types";
+import signale from "../lib/signale";
 // TODO: #1 add MongoDB authentication
 
 const app = express();
@@ -24,44 +24,50 @@ io.use((socket: Socket, next) => {
     return next(new Error("invalid name"));
   }
 
-  const client: Client = {
+  const _socket = {
+    handshake: socket.handshake,
     id: socket.id,
     name,
-    socket,
   };
+
+  const client: Client = _socket;
   clients.push(client);
-  signale.info(`Client connected: ${name} : ${socket.id}`);
+
+  signale.scope("clients").monitor(
+    clients.map((client) => {
+      return {
+        id: client.id,
+        name: client.name,
+      };
+    })
+  );
+  signale.connection(`Client connected: ${name} : ${socket.id}`);
   // @ts-ignore
   socket.username = name;
   next();
 });
 
 io.on("connection", (socket: Socket) => {
-  socket.on("chatMessage", ({ target, content, ...rest }: ChatMessage) => {
-    console.log({ target, content, rest });
+  socket.on("chatMessage", ({ target, content }: ChatMessage) => {
+    const sender = clients.find((client) => client.id === socket.id);
+    const targetClient = clients.find((client) => client.id === target);
 
-    const sender =
-      clients.find((client) => client.id === socket.id)?.name || "Unknown";
-    const from = clients.find((client) => client.name === target);
-
-    console.log({ socket });
-
-    if (from) {
+    if (targetClient && sender) {
       const chatMessage: ChatMessage = {
-        id: socket.id,
-        sender,
-        target: from.name,
+        sender: sender.id,
+        target: targetClient.id,
         content,
         timestamp: Date.now(),
       };
       chatMessages.push(chatMessage);
-      io.to(from!.socket.id).emit("chatMessage", chatMessage);
 
-      if (process.env.NODE_ENV === "development") {
-        io.to(from!.socket.id).emit("message", chatMessage);
-      }
+      signale.sentMessage(chatMessage);
+      signale.scope("chatMessages").monitor(chatMessages);
+
+      io.to(targetClient.id).emit("chatMessage", chatMessage);
     } else {
       if (process.env.NODE_ENV === "development") {
+        signale.error(`target not found: ${target}`);
         io.send(`target not found: ${target}`);
       }
     }
@@ -75,10 +81,11 @@ io.on("connection", (socket: Socket) => {
     const clientIndex = clients.findIndex((client) => client.id === socket.id);
     if (clientIndex !== -1) {
       const disconnectedClient = clients.splice(clientIndex, 1)[0];
-      console.log(`Client disconnected: ${disconnectedClient.name}`);
 
-      // Notify all clients about the disconnected client
-      io.emit("clientDisconnected", disconnectedClient);
+      signale
+        .scope("disconnect")
+        .info(`Client disconnected: ${disconnectedClient.name} : ${socket.id}`);
+      signale.scope("clients").info(clients);
     }
   });
 });

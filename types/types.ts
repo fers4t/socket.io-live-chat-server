@@ -1,7 +1,6 @@
 import { Socket } from "socket.io";
 
 interface ChatMessage {
-  id: string;
   sender: string;
   target: string;
   content: string;
@@ -9,9 +8,11 @@ interface ChatMessage {
 }
 
 interface Client {
-  id: string;
+  handshake: Socket["handshake"];
+  id: Socket["id"];
   name: string;
-  socket: Socket;
 }
 
 export { ChatMessage, Client };
+
+// modify Signale interface
