@@ -25,6 +25,12 @@ const options = {
       label: "monitor",
       logLevel: "info",
     },
+    authentication: {
+      badge: "🔑",
+      color: "magenta",
+      label: "auth",
+      logLevel: "info",
+    },
   },
 };
 

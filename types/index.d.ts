@@ -7,6 +7,7 @@ declare module "signale" {
     sentMessage(message: ChatMessage): void;
     connection(message: string): void;
     monitor(message: string): void;
+    authentication(message: string): void;
 
     Signale: Signale;
   }

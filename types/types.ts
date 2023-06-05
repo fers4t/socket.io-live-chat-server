@@ -5,6 +5,8 @@ interface ChatMessage {
   target: string;
   content: string;
   timestamp: number;
+  hasSeen?: boolean;
+  seenTimestamp?: number;
 }
 
 interface Client {

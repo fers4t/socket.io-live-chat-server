@@ -3,7 +3,7 @@ import http from "http";
 import { Server, Socket } from "socket.io";
 import { ChatMessage, Client } from "@/types/types";
 import signale from "@/lib/signale";
-// TODO: #1 add MongoDB authentication
+import { isAuth } from "@/utils/mongodb/isAuth";
 
 const app = express();
 const server = http.createServer(app);
@@ -18,33 +18,45 @@ const chatMessages: ChatMessage[] = [];
 
 io.use((socket: Socket, next) => {
   const name = socket.handshake.auth?.name;
+  const id = socket.handshake.auth?.id;
 
   if (!name) {
     signale.error(`Client has not name, disconnected.`);
     return next(new Error("invalid name"));
   }
 
-  const _socket = {
-    handshake: socket.handshake,
-    id: socket.id,
-    name,
-  };
+  if (!id) {
+    signale.error(`Client has not id, disconnected.`);
+    return next(new Error("invalid id"));
+  }
 
-  const client: Client = _socket;
-  clients.push(client);
-
-  signale.scope("clients").monitor(
-    clients.map((client) => {
-      return {
-        id: client.id,
-        name: client.name,
+  return isAuth(id)
+    .then((result) => {
+      const _socket = {
+        handshake: socket.handshake,
+        id: socket.id,
+        name,
       };
+
+      const client: Client = _socket;
+      clients.push(client);
+
+      signale.scope("clients").monitor(
+        clients.map((client) => {
+          return {
+            id: client.id,
+            name: client.name,
+          };
+        })
+      );
+      signale.connection(`Client connected: ${name} : ${socket.id}`);
+      // @ts-ignore
+      socket.username = name;
+      return next();
     })
-  );
-  signale.connection(`Client connected: ${name} : ${socket.id}`);
-  // @ts-ignore
-  socket.username = name;
-  next();
+    .catch((error) => {
+      return next(error);
+    });
 });
 
 io.on("connection", (socket: Socket) => {
