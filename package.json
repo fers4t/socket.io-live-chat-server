@@ -1,0 +1,18 @@
+{
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon -w index.ts --exec 'ts-node' index.ts"
+  },
+  "dependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.0.2",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.2.5",
+    "@typescript-eslint/eslint-plugin": "^5.59.8",
+    "@typescript-eslint/parser": "^5.59.8",
+    "eslint": "^8.42.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "express": "^4.18.2",
+    "prettier": "^2.8.8",
+    "socket.io": "^4.6.2"
+  }
+}
