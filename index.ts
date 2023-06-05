@@ -2,39 +2,49 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import { ChatMessage, Client } from "./types";
+import signale from "signale";
+// TODO: #1 add MongoDB authentication
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
 const clients: Client[] = [];
 const chatMessages: ChatMessage[] = [];
 
+io.use((socket: Socket, next) => {
+  const name = socket.handshake.auth?.name;
+
+  if (!name) {
+    signale.error(`Client has not name, disconnected.`);
+    return next(new Error("invalid name"));
+  }
+
+  const client: Client = {
+    id: socket.id,
+    name,
+    socket,
+  };
+  clients.push(client);
+  signale.info(`Client connected: ${name} : ${socket.id}`);
+  // @ts-ignore
+  socket.username = name;
+  next();
+});
+
 io.on("connection", (socket: Socket) => {
-  console.log("A user connected.");
+  socket.on("chatMessage", ({ target, content, ...rest }: ChatMessage) => {
+    console.log({ target, content, rest });
 
-  // Register the client and store its information
-  socket.on("register", (data: Client) => {
-    if (!data.name) {
-      socket.disconnect();
-      return;
-    }
-    const client: Client = {
-      id: socket.id,
-      name: data.name,
-      socket,
-    };
-    clients.push(client);
-
-    if (process.env.NODE_ENV === "development") {
-      io.send(`client registered: ${data.name}`);
-    }
-  });
-
-  socket.on("chatMessage", ({ target, content }: ChatMessage) => {
     const sender =
       clients.find((client) => client.id === socket.id)?.name || "Unknown";
     const from = clients.find((client) => client.name === target);
+
+    console.log({ socket });
 
     if (from) {
       const chatMessage: ChatMessage = {
@@ -48,15 +58,13 @@ io.on("connection", (socket: Socket) => {
       io.to(from!.socket.id).emit("chatMessage", chatMessage);
 
       if (process.env.NODE_ENV === "development") {
-        io.send(`sent chatMessage`, chatMessage);
+        io.to(from!.socket.id).emit("message", chatMessage);
       }
     } else {
       if (process.env.NODE_ENV === "development") {
         io.send(`target not found: ${target}`);
       }
     }
-
-    /////////
   });
 
   // Handle disconnect event
