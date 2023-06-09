@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const CompanySchema = new mongoose.Schema(
+const HizirUserSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -20,6 +20,10 @@ const CompanySchema = new mongoose.Schema(
       trim: true,
       required: true,
     },
+    userType: {
+      type: String,
+      enum: "agent" || "company",
+    },
   },
   {
     timestamps: true,
@@ -32,7 +36,7 @@ const CompanySchema = new mongoose.Schema(
   }
 );
 
-const Company =
-  mongoose.models.Company || mongoose.model("Company", CompanySchema);
+const HizirUser =
+  mongoose.models.HizirUser || mongoose.model("HizirUser", HizirUserSchema);
 
-export default Company;
+export default HizirUser;

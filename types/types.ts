@@ -1,8 +1,14 @@
 import { Socket } from "socket.io";
+import mongoose from "mongoose";
 
-interface ChatMessage {
-  sender: string;
-  target: string;
+interface IChatMessage {
+  sender:
+    | mongoose.Schema.Types.ObjectId
+    | {
+        socketId: string;
+        mongoId: mongoose.Schema.Types.ObjectId;
+      };
+  target: mongoose.Schema.Types.ObjectId;
   content: string;
   timestamp: number;
   hasSeen?: boolean;
@@ -11,8 +17,10 @@ interface ChatMessage {
 
 interface Client {
   handshake: Socket["handshake"];
-  id: Socket["id"];
+  socketId: Socket["id"];
+  mongoId: mongoose.Schema.Types.ObjectId;
   name: string;
+  userType?: "agent" | "company";
 }
 
-export { ChatMessage, Client };
+export { IChatMessage, Client };
